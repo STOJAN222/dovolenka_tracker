@@ -133,11 +133,6 @@ function render(){
     today() >= trip.start_date &&
     today() <= trip.end_date;
 
-  const daysLeft =
-    activeToday
-      ? days(today(),trip.end_date)
-      : tripDays;
-
   const variableBudget =
     Math.max(0,budget-fixed);
 
@@ -192,11 +187,11 @@ function render(){
       <div class="kpi-grid">
         <div class="kpi accent">
           <small>🎯 Dnes môžeš ešte minúť</small>
-          <b>${money(Math.max(0,todayRemaining-todayVariableSpent))}</b>
+          <b>${money(todayRemaining)}</b>
         </div>
         <div class="kpi">
           <small>📅 Denný rozpočet</small>
-          <b>${money(dailyAvailable)}</b>
+          <b>${money(dailyBudget)}</b>
         </div>
       </div>
 
