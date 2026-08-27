@@ -79,6 +79,14 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .cat{position:relative;z-index:1;pointer-events:auto;cursor:pointer}
 @media(max-width:420px){.hero{padding:15px}.compact-kpis b{font-size:17px}.today-mini{font-size:11px}}
 
+
+
+.category-row{display:block;min-height:27px}
+.category-row-head{display:flex;align-items:center;min-height:20px}
+.category-track{display:block}
+.days{display:flex;min-height:56px;align-items:stretch}
+.day{display:block}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -396,50 +404,99 @@ function row(e){
   </div>`;
 }
 function renderLists(){
-  document.getElementById("today").innerHTML =
-    expenses
-      .filter(e=>e.expense_date===today())
-      .map(row)
-      .join("")
-    || '<div class="muted" style="padding-top:12px">Dnes zatiaľ žiadny výdavok.</div>';
+  const todayEl=document.getElementById("today");
+  const historyEl=document.getElementById("history");
+  const daysEl=document.getElementById("days");
 
-  document.getElementById("history").innerHTML =
-    [...expenses]
-      .sort((a,b)=>new Date(b.expense_date)-new Date(a.expense_date))
-      .slice(0,15)
-      .map(row)
-      .join("")
-    || '<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+  // These three sections render independently so one bad/empty date
+  // cannot prevent Categories or Vacation Days from appearing.
+  if(todayEl){
+    try{
+      todayEl.innerHTML =
+        expenses
+          .filter(e=>e.expense_date===today())
+          .map(row)
+          .join("")
+        || '<div class="muted" style="padding-top:12px">Dnes zatiaľ žiadny výdavok.</div>';
+    }catch(err){
+      console.error("Dnes:",err);
+      todayEl.innerHTML='<div class="muted" style="padding-top:12px">Nepodarilo sa načítať dnešné výdavky.</div>';
+    }
+  }
 
-  const dl = dateList();
+  if(historyEl){
+    try{
+      historyEl.innerHTML =
+        [...expenses]
+          .sort((a,b)=>new Date(b.expense_date)-new Date(a.expense_date))
+          .slice(0,15)
+          .map(row)
+          .join("")
+        || '<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+    }catch(err){
+      console.error("História:",err);
+      historyEl.innerHTML='<div class="muted" style="padding-top:12px">Nepodarilo sa načítať výdavky.</div>';
+    }
+  }
 
-  document.getElementById("days").innerHTML =
-    dl.length
-      ? dl.map((d,i)=>{
-          const v =
-            expenses
+  if(daysEl){
+    try{
+      const startDate=trip.start_date;
+      const endDate=trip.end_date;
+      let dl=[];
+
+      if(startDate && endDate){
+        const first=new Date(startDate+"T00:00:00");
+        const last=new Date(endDate+"T00:00:00");
+        const count=Math.floor((last-first)/86400000)+1;
+
+        if(Number.isFinite(count) && count>0 && count<=366){
+          for(let i=0;i<count;i++){
+            const d=new Date(first);
+            d.setDate(first.getDate()+i);
+            dl.push(d.toISOString().slice(0,10));
+          }
+        }
+      }
+
+      if(!dl.length){
+        dl=[...new Set(
+          expenses
+            .map(e=>e.expense_date)
+            .filter(Boolean)
+        )].sort();
+      }
+
+      const plan =
+        (typeof variableBudget==="undefined" || !trip.budget)
+          ? 0
+          : Math.max(0,Number(trip.budget||0) -
+              expenses.filter(e=>e.fixed).reduce((a,e)=>a+Number(e.amount||0),0))
+            / dl.length;
+
+      daysEl.innerHTML = dl.length
+        ? dl.map((d,i)=>{
+            const v=expenses
               .filter(e=>e.expense_date===d && !e.fixed)
               .reduce((a,e)=>a+Number(e.amount||0),0);
 
-          const dayPlan =
-            tripDays > 0
-              ? variableBudget / tripDays
-              : 0;
+            const dayClass=v>plan && plan>0 ? " over" : "";
 
-          const dayClass =
-            v > dayPlan && dayPlan > 0 ? " over" : "";
-
-          return `
-            <div class="day ${d===today()?"selected":""}${dayClass}">
-              <small>${i+1}. deň · ${d.slice(5).replace("-",".")}</small>
-              <b>${money(v)}</b>
-              <em>${dayPlan>0 ? "plán "+money(dayPlan) : ""}</em>
-            </div>
-          `;
-        }).join("")
-      : "<span class='muted'>Dovolenka ešte nezačala.</span>";
+            return `
+              <div class="day ${d===today()?"selected":""}${dayClass}">
+                <small>${i+1}. deň · ${d.slice(5).replace("-",".")}</small>
+                <b>${money(v)}</b>
+                ${plan>0 ? `<em>plán ${money(plan)}</em>` : ""}
+              </div>
+            `;
+          }).join("")
+        : "<span class='muted'>Dátumy dovolenky zatiaľ nie sú nastavené.</span>";
+    }catch(err){
+      console.error("Dni dovolenky:",err);
+      daysEl.innerHTML="<span class='muted'>Nepodarilo sa načítať dni dovolenky.</span>";
+    }
+  }
 }
-
 function paidBy(person){
   // Pri "Platené spolu" sa výdavok započíta každému iba z 50 %.
   // Pri výdavku platenom jednou osobou sa započíta celá suma platiteľovi.
@@ -512,39 +569,42 @@ function renderCategories(){
   const el=document.getElementById("categorySummary");
   if(!el) return;
 
-  const totals={};
+  try{
+    const totals={};
 
-  expenses.forEach(e=>{
-    const name=e.category||"Ostatné";
-    totals[name]=(totals[name]||0)+Number(e.amount||0);
-  });
+    expenses.forEach(e=>{
+      const name=String(e.category||"Ostatné");
+      totals[name]=(totals[name]||0)+Number(e.amount||0);
+    });
 
-  const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
 
-  if(!rows.length){
-    el.innerHTML='<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
-    return;
+    if(!rows.length){
+      el.innerHTML='<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+      return;
+    }
+
+    const total=rows.reduce((s,x)=>s+x[1],0);
+
+    el.innerHTML=rows.map(([name,value])=>{
+      const pct=total>0 ? value/total*100 : 0;
+      return `
+        <div class="category-row">
+          <div class="category-row-head">
+            <span>${categoryEmoji(name)} ${esc(name)}</span>
+            <b>${money(value)} · ${pct.toFixed(0)} %</b>
+          </div>
+          <div class="category-track">
+            <i style="width:${Math.min(100,Math.max(0,pct))}%"></i>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }catch(err){
+    console.error("Kategórie:",err);
+    el.innerHTML='<div class="muted" style="padding-top:12px">Nepodarilo sa načítať kategórie.</div>';
   }
-
-  const total=rows.reduce((s,x)=>s+x[1],0);
-
-  el.innerHTML=rows.map(([name,value])=>{
-    const pct=total>0 ? value/total*100 : 0;
-
-    return `
-      <div class="category-row">
-        <div class="category-row-head">
-          <span>${categoryEmoji(name)} ${esc(name)}</span>
-          <b>${money(value)} · ${pct.toFixed(0)} %</b>
-        </div>
-        <div class="category-track">
-          <i style="width:${pct}%"></i>
-        </div>
-      </div>
-    `;
-  }).join("");
 }
-
 function copyShare(){
   navigator.clipboard
     .writeText(location.href)
