@@ -99,6 +99,64 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 
 
 
+
+
+/* v12.5 – clean mobile UX */
+.fab-add-expense{
+  position:fixed;
+  right:max(18px,env(safe-area-inset-right));
+  bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:1000;
+  min-width:58px;
+  height:58px;
+  padding:0 18px;
+  border:0;
+  border-radius:999px;
+  background:#2563eb;
+  color:#fff;
+  font:700 14px/1 inherit;
+  box-shadow:0 8px 24px rgba(15,23,42,.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.fab-add-expense span:first-child{font-size:27px;line-height:1}
+.fab-label{font-size:13px}
+.days-card{padding:0;overflow:hidden}
+.days-toggle{
+  width:100%;
+  min-height:68px;
+  padding:14px 16px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  text-align:left;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.days-toggle-title{display:flex;align-items:center;gap:9px}
+.days-toggle-title>span:first-child{font-size:18px}
+.days-toggle-title b{display:block;font-size:15px}
+.days-toggle-title small{display:block;margin-top:3px;color:#718096;font-size:11px;font-weight:500}
+.days-chevron{font-size:24px;line-height:1;color:#718096;transition:transform .18s ease}
+.days-card.expanded .days-chevron{transform:rotate(180deg)}
+.days-content{padding:0 12px 14px}
+.days-content[hidden]{display:none}
+.days-content #days{margin-top:0}
+@media(max-width:700px){
+  .fab-add-expense{width:58px;height:58px;min-width:58px;padding:0;border-radius:50%}
+  .fab-label{display:none}
+}
+@media(min-width:701px){
+  body{padding-bottom:92px}
+}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -309,10 +367,6 @@ function render(){
       </div>
     </div>
 
-    <button class="primary add" onclick="openExpense()">
-      ＋ PRIDAŤ VÝDAVOK
-    </button>
-
     <div class="card">
       <div class="section-head">
         <b>DNES</b>
@@ -355,9 +409,20 @@ function render(){
       </div>
       <div id="categorySummary"></div>
     </div>
-    <div class="card">
-      <b>📅 DNI DOVOLENKY</b>
-      <div class="days" id="days" style="margin-top:10px"></div>
+    <div class="card days-card" id="daysCard">
+      <button class="days-toggle" type="button" onclick="toggleDays()" aria-expanded="false" aria-controls="daysContent">
+        <span class="days-toggle-title">
+          <span aria-hidden="true">📅</span>
+          <span>
+            <b>DNI DOVOLENKY</b>
+            <small id="daysSummary">Dni dovolenky</small>
+          </span>
+        </span>
+        <span class="days-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div id="daysContent" class="days-content" hidden>
+        <div id="days"></div>
+      </div>
     </div>
 
 
@@ -403,6 +468,32 @@ function row(e){
     </div>
   </div>`;
 }
+function toggleDays(){
+  const content=document.getElementById("daysContent");
+  const card=document.getElementById("daysCard");
+  const btn=card?.querySelector(".days-toggle");
+  if(!content || !btn) return;
+  const open=content.hidden;
+  content.hidden=!open;
+  btn.setAttribute("aria-expanded", String(open));
+  card.classList.toggle("expanded", open);
+}
+
+function updateDaysSummary(){
+  const el=document.getElementById("daysSummary");
+  if(!el) return;
+  const s=trip?.start_date, e=trip?.end_date;
+  if(s && e){
+    const a=new Date(s+"T00:00:00"), b=new Date(e+"T00:00:00");
+    const n=Math.floor((b-a)/86400000)+1;
+    if(Number.isFinite(n) && n>0) {
+      el.textContent=`${s.slice(8,10)}.${s.slice(5,7)}. – ${e.slice(8,10)}.${e.slice(5,7)}. · ${n} dní`;
+      return;
+    }
+  }
+  el.textContent="Dátumy zatiaľ nie sú nastavené";
+}
+
 function renderLists(){
   const todayEl=document.getElementById("today");
   const historyEl=document.getElementById("history");
@@ -439,6 +530,7 @@ function renderLists(){
     }
   }
 
+  updateDaysSummary();
   if(daysEl){
     try{
       const startDate=trip.start_date;
@@ -688,5 +780,11 @@ function closeModal(){document.getElementById("modal").classList.remove("open")}
 function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 init()
 </script>
+
+
+
+  <button class="fab-add-expense" onclick="openExpense()" aria-label="Pridať výdavok" title="Pridať výdavok">
+    <span aria-hidden="true">+</span><span class="fab-label">Výdavok</span>
+  </button>
 
 </body></html>
