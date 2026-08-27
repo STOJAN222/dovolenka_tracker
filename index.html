@@ -157,6 +157,28 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
   body{padding-bottom:92px}
 }
 
+
+
+/* v12.6 – focused dashboard */
+.hero-spend-label{font-size:11px;font-weight:700;letter-spacing:.06em;color:#718096}
+.hero-total{font-size:34px;line-height:1.05;font-weight:800;margin-top:3px;letter-spacing:-.03em}
+.hero-budget-line{display:flex;justify-content:space-between;gap:12px;margin-top:7px;color:#718096;font-size:11px}
+.hero .bar{margin-top:7px}
+.hero-today{margin-top:16px;padding:15px;border-radius:14px;background:#f4f7ff;border:1px solid #dce7ff}
+.hero-today-label{font-size:11px;font-weight:800;letter-spacing:.04em;color:#4b6cb7}
+.hero-today-value{font-size:30px;line-height:1.05;font-weight:800;margin-top:4px}
+.hero-today-sub{font-size:11px;color:#718096;margin-top:5px}
+.hero-secondary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.hero-secondary>div{padding:10px 11px;background:#f7f8fa;border:1px solid #e7ebf0;border-radius:11px}
+.hero-secondary small{display:block;color:#718096;font-size:10px}
+.hero-secondary b{display:block;margin-top:3px;font-size:15px}
+.settlement-result{margin-top:10px}
+.settlement-result .kpi{border:1px solid #e3e8ef}
+@media(max-width:480px){
+  .hero-total{font-size:32px}
+  .hero-today-value{font-size:28px}
+}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -332,37 +354,32 @@ function render(){
     </div>
 
     <div class="card hero">
-      <div class="muted">Celkom minuté</div>
-      <div class="total">${money(total)}</div>
+      <div class="hero-spend-label">CELKOM MINUTÉ</div>
+      <div class="hero-total">${money(total)}</div>
+      <div class="hero-budget-line">
+        <span>z rozpočtu ${money(trip.budget||0)}</span>
+        <span>${Math.round(totalPercent)} %</span>
+      </div>
+      <div class="bar"><i style="width:${totalPercent}%"></i></div>
 
-      <div class="bar">
-        <i style="width:${totalPercent}%"></i>
+      <div class="hero-today">
+        <div class="hero-today-label">🎯 DNES MÔŽEŠ MINÚŤ</div>
+        <div class="hero-today-value">${money(adaptiveDailyBudget)}</div>
+        <div class="hero-today-sub">
+          ${activeToday
+            ? `${money(todayVariableSpent)} minuté · ${money(todayRemaining)} zostáva`
+            : `${money(adaptiveDailyBudget)} / deň`}
+        </div>
       </div>
 
-      <div class="compact-kpis">
+      <div class="hero-secondary">
         <div>
           <small>Zostáva z rozpočtu</small>
           <b>${money(remaining)}</b>
         </div>
         <div>
-          <small>Dnes môžeš minúť</small>
-          <b>${money(adaptiveDailyBudget)}</b>
-        </div>
-      </div>
-
-      <div class="today-mini ${activeToday && todayVariableSpent>adaptiveDailyBudget ? "over" : activeToday && todayVariableSpent>adaptiveDailyBudget*0.8 ? "warning" : ""}">
-        <span>🎯 Dnes minuté <b>${money(todayVariableSpent)}</b></span>
-        <span>${activeToday ? "Zostáva "+money(todayRemaining) : money(adaptiveDailyBudget)+" / deň"}</span>
-      </div>
-
-      <div class="trip-status compact-status">
-        <span>💡</span>
-        <div>
-          <b>
-            ${activeToday
-              ? "Zostáva "+daysLeft+" "+(daysLeft===1?"deň":"dní")
-              : today() < trip.start_date ? `Dovolenka začína ${new Date(trip.start_date+"T00:00:00").toLocaleDateString("sk-SK")}` : `Dovolenka skončila ${new Date(trip.end_date+"T00:00:00").toLocaleDateString("sk-SK")}`}
-          </b>
+          <small>${activeToday ? "Do konca dovolenky" : "Stav dovolenky"}</small>
+          <b>${activeToday ? `${daysLeft} ${daysLeft===1?"deň":"dní"}` : (today() < trip.start_date ? "Ešte nezačala" : "Skončila")}</b>
         </div>
       </div>
     </div>
@@ -390,7 +407,8 @@ function render(){
           <b>${money(paidBy(trip.person2))}</b>
         </div>
       </div>
-      <div class="settlement-note">🤝 „Platené spolu“ sa započítava 50/50.</div><div id="settle" style="margin-top:12px"></div>
+      <div class="settlement-note">🤝 „Platené spolu“ sa započítava 50/50.</div>
+      <div id="settle" class="settlement-result"></div>
     </div>
     <div class="card">
       <div class="top">
