@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dovolenka Tracker v9.4</title>
+<title>Dovolenka Tracker v9.5</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{margin:0;background:#f4f6f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a}.app{max-width:620px;margin:auto;padding:18px 14px 70px}
@@ -117,7 +117,7 @@ function renderCats(){
   }).join("");
 }
 
-function saveExpense(){let amount=Number(document.getElementById("amount").value);if(!amount)return alert("Zadaj sumu.");let obj={p_share_code:trip.share_code,p_amount:amount,p_category:cat,p_expense_date:document.getElementById("date").value,p_note:document.getElementById("note").value.trim(),p_fixed:document.getElementById("fixed").checked,p_payer:document.getElementById("payer").value,p_payment:document.getElementById("payment").value,p_settlement_status:document.getElementById("settlement").value};let r=editing?await db.rpc("update_expense",{...obj,p_expense_id:editing.id}):await db.rpc("add_expense",obj);if(r.error)return alert(r.error.message);closeModal();await load();render()}
+async function saveExpense(){let amount=Number(document.getElementById("amount").value);if(!amount)return alert("Zadaj sumu.");let obj={p_share_code:trip.share_code,p_amount:amount,p_category:cat,p_expense_date:document.getElementById("date").value,p_note:document.getElementById("note").value.trim(),p_fixed:document.getElementById("fixed").checked,p_payer:document.getElementById("payer").value,p_payment:document.getElementById("payment").value,p_settlement_status:document.getElementById("settlement").value};let r=editing?await db.rpc("update_expense",{...obj,p_expense_id:editing.id}):await db.rpc("add_expense",obj);if(r.error)return alert(r.error.message);closeModal();await load();render()}
 async function delExpense(id){if(!confirm("Vymazať výdavok?"))return;let r=await db.rpc("delete_expense",{p_share_code:trip.share_code,p_expense_id:id});if(r.error)return alert(r.error.message);await load();render()}
 function openSettings(){sname.value=trip.name;sbudget.value=trip.budget;sp1.value=trip.person1;sp2.value=trip.person2;sstart.value=trip.start_date||"";send.value=trip.end_date||"";document.getElementById("settings").classList.add("open")}
 async function saveSettings(){if(sstart.value&&send.value&&send.value<sstart.value)return alert("Koniec nemôže byť pred začiatkom.");let r=await db.rpc("update_trip",{p_share_code:trip.share_code,p_name:sname.value,p_budget:Number(sbudget.value)||0,p_person1:sp1.value||"Ja",p_person2:sp2.value||"Partner",p_start_date:sstart.value||null,p_end_date:send.value||null});if(r.error)return alert(r.error.message);closeSettings();await load();render()}
