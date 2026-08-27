@@ -1,6 +1,6 @@
 {
-  "name": "Dovolenka Tracker",
-  "short_name": "Dovolenka",
+  "name": "Dovolenka - výdavky",
+  "short_name": "Dovolenka - výdavky",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
