@@ -226,12 +226,12 @@ function render(){
         <b>
           ${activeToday
             ? "Zostáva "+daysLeft+" "+(daysLeft===1?"deň":"dní")
-            : "Nastav dátumy dovolenky"}
+            : today() < trip.start_date ? `Dovolenka začína ${new Date(trip.start_date+"T00:00:00").toLocaleDateString("sk-SK")}` : `Dovolenka skončila ${new Date(trip.end_date+"T00:00:00").toLocaleDateString("sk-SK")}`}
         </b>
         <div class="muted">
           ${activeToday
             ? "Rozpočet po odpočítaní fixných výdavkov je rozdelený rovnomerne na dni dovolenky."
-            : "Denný rozpočet sa zobrazí po nastavení dátumov."}
+            : "Dovolenka ešte nezačala. Denný rozpočet je pripravený na každý deň dovolenky."}
         </div>
       </div>
     </div>
@@ -375,7 +375,7 @@ function renderLists(){
             </div>
           `;
         }).join("")
-      : "<span class='muted'>Nastav dátumy.</span>";
+      : "<span class='muted'>Dovolenka ešte nezačala.</span>";
 }
 
 function paidBy(person){
