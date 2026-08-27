@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="sk">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dovolenka Tracker v9.6</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Dovolenka Tracker v10.1</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{margin:0;background:#f4f6f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a}.app{max-width:620px;margin:auto;padding:18px 14px 70px}
@@ -12,18 +12,37 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .exp{display:flex;gap:9px;align-items:center;border-top:1px solid #eef0f2;padding:11px 0}.ico{font-size:22px;width:32px}.info{flex:1;min-width:0}.info b,.info small{display:block}.info small{color:#718096;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.amt{font-weight:800;white-space:nowrap}.acts{display:flex;gap:4px}.mini{padding:6px 7px;font-size:12px}
 .days{display:flex;gap:7px;overflow:auto}.day{min-width:58px;text-align:center;padding:9px 4px;background:#f7f8fa;border:1px solid #e5e9ef;border-radius:12px}.day b{display:block}.day small{color:#718096}.selected{background:#eef4ff;border-color:#c9d9ff}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{background:#eef4ff;border-radius:14px;padding:12px}.tile small{display:block;color:#718096}.tile b{font-size:19px}
-.modal{position:fixed;inset:0;background:#0008;display:none;align-items:end;justify-content:center;z-index:5}.modal.open{display:flex}.box{background:white;width:min(620px,100%);border-radius:22px 22px 0 0;padding:20px;max-height:92vh;overflow:auto}.form{display:grid;gap:11px}.form input,.form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9dee6;border-radius:11px;font:inherit}.form label{font-size:13px;font-weight:750}.actions2{display:flex;gap:8px;justify-content:flex-end}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:flex-end;justify-content:center;z-index:5;touch-action:none;overscroll-behavior:none}.modal.open{display:flex}.box{background:white;width:min(620px,100%);border-radius:22px 22px 0 0;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));max-height:calc(100dvh - 16px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;box-sizing:border-box}.form{display:grid;gap:11px}.form input,.form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9dee6;border-radius:11px;font:inherit;font-size:16px}.form label{font-size:13px;font-weight:750}.actions2{display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom));background:#fff;padding:12px 0 calc(4px + env(safe-area-inset-bottom));margin-top:4px}
 .category-field{margin-bottom:2px}.category-field>label{display:block;margin-bottom:6px}.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.cat{appearance:none;-webkit-appearance:none;background:#f7f8fa;border:1px solid #e5e9ef;padding:10px 3px;font-size:11px;min-height:58px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}.cat span{display:block;font-size:20px}.cat.sel{background:#eef4ff;border-color:#c9d9ff}
 .share{display:flex;gap:8px;align-items:center;background:#f7f8fa;padding:10px;border-radius:12px}.share input{flex:1;border:0;background:transparent;font-size:12px}
 @media(max-width:420px){.cats{grid-template-columns:repeat(3,1fr)}}
+
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.kpi{background:#f7f8fa;border-radius:14px;padding:12px}
+.kpi small{display:block;color:#718096;font-size:12px}
+.kpi b{display:block;font-size:20px;margin-top:4px}
+.kpi.accent{background:#eef4ff}
+.kpi.accent b{color:#1d4ed8}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.category-row{margin-top:12px}
+.category-row-head{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.category-track{height:8px;background:#edf0f4;border-radius:99px;overflow:hidden;margin-top:6px}
+.category-track i{display:block;height:100%;background:#2563eb;border-radius:99px}
+@media(max-width:420px){.kpi-grid{grid-template-columns:1fr 1fr}.kpi b{font-size:18px}}
+
+.modal-lock,body{overscroll-behavior:none}
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Dovolenka Tracker">
   <meta name="application-name" content="Dovolenka Tracker">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffffff'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-size='42'%3E🏝️%3C/text%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='38' fill='%23ffffff'/%3E%3Ctext x='90' y='128' text-anchor='middle' font-size='110'%3E🏝️%3C/text%3E%3C/svg%3E">
+
+
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
 
 </head>
 <body><div class="app" id="app"><div class="muted">Načítavam…</div></div>
@@ -58,22 +77,358 @@ async function landing(msg){document.getElementById("app").innerHTML=`<div class
 async function createTrip(){let n=prompt("Názov dovolenky","Moja dovolenka")||"Moja dovolenka";let r=await db.rpc("create_trip",{p_name:n});if(r.error)return alert(r.error.message);trip=r.data;history.replaceState({},"","?trip="+trip.share_code);await load();render()}
 async function load(){let r=await db.rpc("get_trip",{p_share_code:trip.share_code});if(r.error)throw new Error(r.error.message);trip=r.data.trip;expenses=r.data.expenses||[]}
 function dateList(){let n=days(trip.start_date,trip.end_date);if(!n)return [...new Set(expenses.map(e=>e.expense_date))].sort();return Array.from({length:n},(_,i)=>{let d=new Date(trip.start_date+"T00:00:00");d.setDate(d.getDate()+i);return d.toISOString().slice(0,10)})}
-function render(){let total=expenses.reduce((a,e)=>a+Number(e.amount),0),fixed=expenses.filter(e=>e.fixed).reduce((a,e)=>a+Number(e.amount),0),remain=Number(trip.budget)-total,n=days(trip.start_date,trip.end_date),pool=Math.max(0,Number(trip.budget)-fixed),planned=n?pool/n:0,left=trip.end_date?Math.max(0,days(today()>trip.end_date?trip.end_date:today(),trip.end_date)):0,dyn=left?Math.max(0,remain)/left:0;
-document.getElementById("app").innerHTML=`<div class="top"><div><h1><span id="tripFlag">🇮🇹</span> ${esc(trip.name)}</h1><div class="muted">${trip.start_date||"—"} – ${trip.end_date||"—"} · EUR</div></div><button class="ghost" onclick="openSettings()">⚙️</button></div>
-<div class="card hero"><div class="muted">Celkom minuté</div><div class="total">${money(total)}</div><div class="bar"><i style="width:${trip.budget?Math.min(100,total/trip.budget*100):0}%"></i></div><div class="grid2"><div><div class="muted">Zostáva</div><b>${money(remain)}</b></div><div><div class="muted">Fixné</div><b>${money(fixed)}</b></div></div><div class="daily">💶 <b>${n?money(dyn)+" / deň":"—"}</b><div class="muted">${n?"Aktuálne tempo · "+left+" dní zostáva":"Nastav dátumy"}</div></div></div>
-<button class="primary add" onclick="openExpense()">＋ PRIDAŤ VÝDAVOK</button>
-<div class="card"><div class="top"><b>DNES</b><b>${money(expenses.filter(e=>e.expense_date===today()).reduce((a,e)=>a+Number(e.amount),0))}</b></div><div id="today"></div></div>
-<div class="card"><b>KTO PLATIL</b><div class="grid2" style="margin-top:10px"><div class="tile"><small>👤 ${esc(trip.person1)}</small><b>${money(unsettled(trip.person1))}</b></div><div class="tile"><small>👤 ${esc(trip.person2)}</small><b>${money(unsettled(trip.person2))}</b></div></div><div id="settle" style="text-align:center;margin-top:12px"></div></div>
-<div class="card"><b>SPÔSOB PLATBY</b><div class="grid2" style="margin-top:10px"><div class="tile"><small>💳 Karta</small><b>${money(expenses.filter(e=>e.payment==="Karta").reduce((a,e)=>a+Number(e.amount),0))}</b></div><div class="tile"><small>💶 Hotovosť</small><b>${money(expenses.filter(e=>e.payment==="Hotovosť").reduce((a,e)=>a+Number(e.amount),0))}</b></div></div></div>
-<div class="card"><b>DNI DOVOLENKY</b><div class="days" id="days" style="margin-top:10px"></div></div>
-<div class="card"><div class="top"><b>POSLEDNÉ VÝDAVKY</b><span class="muted">${expenses.length}</span></div><div id="history"></div></div>
-<div class="card"><b>ZDIEĽAŤ TRACKER</b><div class="share" style="margin-top:10px"><input id="shareUrl" readonly value="${esc(location.href)}"><button class="ghost" onclick="navigator.clipboard.writeText(location.href);this.textContent='Skopírované ✓'">Kopírovať</button></div></div>`;
-renderLists(planned)}
-function renderLists(planned){document.getElementById("today").innerHTML=expenses.filter(e=>e.expense_date===today()).map(row).join("")||'<div class="muted" style="padding-top:12px">Dnes zatiaľ žiadny výdavok.</div>';document.getElementById("history").innerHTML=expenses.slice(0,15).map(row).join("")||'<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
-let dl=dateList();document.getElementById("days").innerHTML=dl.length?dl.map((d,i)=>{let v=expenses.filter(e=>e.expense_date===d&&!e.fixed).reduce((a,e)=>a+Number(e.amount),0);return `<div class="day"><small>${i+1}. deň</small><b>${money(v)}</b></div>`}).join(""):"<span class='muted'>Nastav dátumy.</span>";
-let u1=unsettled(trip.person1),u2=unsettled(trip.person2),diff=u1-u2;document.getElementById("settle").innerHTML=Math.abs(diff)<.005?"Ste vyrovnaní.":diff>0?`${esc(trip.person2)} ti má doplatiť <b>${money(diff/2)}</b>.`:`Ty máš ${esc(trip.person2)} doplatiť <b>${money(-diff/2)}</b>.`}
-function unsettled(p){return expenses.filter(e=>(e.settlement_status||"Nevyrovnané")==="Nevyrovnané"&&(e.payer||trip.person1)===p).reduce((a,e)=>a+Number(e.amount),0)}
-function row(e){let c=cats.find(x=>x[1]===e.category)||["•",e.category];return `<div class="exp"><div class="ico">${c[0]}</div><div class="info"><b>${esc(e.category)} · ${money(e.amount)}</b><small>${esc(e.note||"Bez poznámky")} · 👤 ${esc(e.payer)} · ${e.payment==="Hotovosť"?"💶":"💳"} · ${e.settlement_status==="Platené spolu"?"🤝":e.settlement_status==="Vyrovnané"?"🟢":"🔴"}</small></div><div class="acts"><button class="ghost mini" onclick="openExpense('${e.id}')">✏️</button><button class="ghost mini" onclick="delExpense('${e.id}')">🗑️</button></div></div>`}
+function render(){
+  const total =
+    expenses.reduce((a,e)=>a+Number(e.amount||0),0);
+
+  const fixed =
+    expenses
+      .filter(e=>e.fixed)
+      .reduce((a,e)=>a+Number(e.amount||0),0);
+
+  const variableSpent =
+    Math.max(0,total-fixed);
+
+  const budget =
+    Number(trip.budget||0);
+
+  const remaining =
+    budget-total;
+
+  const tripDays =
+    days(trip.start_date,trip.end_date);
+
+  const todaySpent =
+    expenses
+      .filter(e=>e.expense_date===today())
+      .reduce((a,e)=>a+Number(e.amount||0),0);
+
+  const todayVariableSpent =
+    expenses
+      .filter(e=>e.expense_date===today() && !e.fixed)
+      .reduce((a,e)=>a+Number(e.amount||0),0);
+
+  const activeToday =
+    trip.start_date &&
+    trip.end_date &&
+    today() >= trip.start_date &&
+    today() <= trip.end_date;
+
+  const daysLeft =
+    activeToday
+      ? days(today(),trip.end_date)
+      : tripDays;
+
+  const variableBudget =
+    Math.max(0,budget-fixed);
+
+  const variableRemaining =
+    Math.max(0,variableBudget-variableSpent);
+
+  // Dynamic daily allowance: remaining discretionary budget is
+  // recalculated across the remaining days, so underspending one day
+  // automatically increases what is available on later days.
+  const dailyAvailable =
+    daysLeft > 0
+      ? variableRemaining / daysLeft
+      : 0;
+
+  const todayRemaining =
+    activeToday
+      ? dailyAvailable
+      : 0;
+
+  const totalPercent =
+    budget > 0
+      ? Math.min(100,total/budget*100)
+      : 0;
+
+  document.getElementById("app").innerHTML = `
+    <div class="top">
+      <div>
+        <h1><span id="tripFlag">🇮🇹</span> ${esc(trip.name)}</h1>
+        <div class="muted">
+          ${trip.start_date||"—"} – ${trip.end_date||"—"} · EUR
+        </div>
+      </div>
+      <button class="ghost" onclick="openSettings()">⚙️</button>
+    </div>
+
+    <div class="card hero">
+      <div class="muted">Celkom minuté</div>
+      <div class="total">${money(total)}</div>
+
+      <div class="bar">
+        <i style="width:${totalPercent}%"></i>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="muted">Zostáva z rozpočtu</div>
+          <b>${money(remaining)}</b>
+        </div>
+        <div>
+          <div class="muted">Fixné výdavky</div>
+          <b>${money(fixed)}</b>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi accent">
+          <small>🎯 Dnes môžeš ešte minúť</small>
+          <b>${money(Math.max(0,todayRemaining-todayVariableSpent))}</b>
+        </div>
+        <div class="kpi">
+          <small>📅 Denný limit odteraz</small>
+          <b>${money(dailyAvailable)}</b>
+        </div>
+      </div>
+
+      <div class="daily">
+        💡
+        <b>
+          ${activeToday
+            ? "Zostáva "+daysLeft+" "+(daysLeft===1?"deň":"dní")
+            : "Nastav dátumy dovolenky"}
+        </b>
+        <div class="muted">
+          ${activeToday
+            ? "Denný limit sa priebežne prepočítava podľa toho, koľko ešte zostáva."
+            : "Denný rozpočet sa zobrazí po nastavení dátumov."}
+        </div>
+      </div>
+    </div>
+
+    <button class="primary add" onclick="openExpense()">
+      ＋ PRIDAŤ VÝDAVOK
+    </button>
+
+    <div class="card">
+      <div class="section-head">
+        <b>DNES</b>
+        <b>${money(todaySpent)}</b>
+      </div>
+      <div id="today"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <b>VYSPORIADANIE</b>
+        <span class="muted">${esc(trip.person1)} + ${esc(trip.person2)}</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <small>👤 ${esc(trip.person1)} zaplatil</small>
+          <b>${money(paidBy(trip.person1))}</b>
+        </div>
+        <div class="kpi">
+          <small>👤 ${esc(trip.person2)} zaplatil</small>
+          <b>${money(paidBy(trip.person2))}</b>
+        </div>
+      </div>
+      <div id="settle" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <b>📊 KATEGÓRIE</b>
+        <span class="muted">${money(total)}</span>
+      </div>
+      <div id="categorySummary"></div>
+    </div>
+
+    <div class="card">
+      <b>SPÔSOB PLATBY</b>
+      <div class="grid2" style="margin-top:10px">
+        <div class="tile">
+          <small>💳 Karta</small>
+          <b>${money(
+            expenses
+              .filter(e=>e.payment==="Karta")
+              .reduce((a,e)=>a+Number(e.amount||0),0)
+          )}</b>
+        </div>
+        <div class="tile">
+          <small>💶 Hotovosť</small>
+          <b>${money(
+            expenses
+              .filter(e=>e.payment==="Hotovosť")
+              .reduce((a,e)=>a+Number(e.amount||0),0)
+          )}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <b>📅 DNI DOVOLENKY</b>
+      <div class="days" id="days" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <div class="top">
+        <b>POSLEDNÉ VÝDAVKY</b>
+        <span class="muted">${expenses.length}</span>
+      </div>
+      <div id="history"></div>
+    </div>
+
+    <div class="card">
+      <b>ZDIEĽAŤ TRACKER</b>
+      <div class="share" style="margin-top:10px">
+        <input id="shareUrl" readonly value="${esc(location.href)}">
+        <button class="ghost" onclick="copyShare()">Kopírovať</button>
+      </div>
+    </div>
+  `;
+
+  renderLists();
+  renderCategories();
+  renderSettlement();
+}
+function renderLists(){
+  document.getElementById("today").innerHTML =
+    expenses
+      .filter(e=>e.expense_date===today())
+      .map(row)
+      .join("")
+    || '<div class="muted" style="padding-top:12px">Dnes zatiaľ žiadny výdavok.</div>';
+
+  document.getElementById("history").innerHTML =
+    [...expenses]
+      .sort((a,b)=>new Date(b.expense_date)-new Date(a.expense_date))
+      .slice(0,15)
+      .map(row)
+      .join("")
+    || '<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+
+  const dl = dateList();
+
+  document.getElementById("days").innerHTML =
+    dl.length
+      ? dl.map((d,i)=>{
+          const v =
+            expenses
+              .filter(e=>e.expense_date===d && !e.fixed)
+              .reduce((a,e)=>a+Number(e.amount||0),0);
+
+          return `
+            <div class="day ${d===today()?"selected":""}">
+              <small>${i+1}. deň</small>
+              <b>${money(v)}</b>
+            </div>
+          `;
+        }).join("")
+      : "<span class='muted'>Nastav dátumy.</span>";
+}
+
+function paidBy(person){
+  return expenses
+    .filter(e=>
+      (e.payer||"")===person &&
+      (e.settlement_status||"Nevyrovnané")!=="Vyrovnané"
+    )
+    .reduce((a,e)=>a+Number(e.amount||0),0);
+}
+
+function renderSettlement(){
+  const el=document.getElementById("settle");
+  if(!el) return;
+
+  const p1=trip.person1||"Ja";
+  const p2=trip.person2||"Partner";
+
+  let p1Share=0;
+  let p2Share=0;
+  let p1Paid=0;
+  let p2Paid=0;
+
+  expenses.forEach(e=>{
+    const amount=Number(e.amount||0);
+    const status=e.settlement_status||"Nevyrovnané";
+
+    if(status==="Vyrovnané") return;
+
+    if(status==="Platené spolu"){
+      p1Share += amount/2;
+      p2Share += amount/2;
+      p1Paid += amount/2;
+      p2Paid += amount/2;
+      return;
+    }
+
+    if(e.payer===p1){
+      p1Paid += amount;
+      p1Share += amount/2;
+      p2Share += amount/2;
+    }else if(e.payer===p2){
+      p2Paid += amount;
+      p1Share += amount/2;
+      p2Share += amount/2;
+    }
+  });
+
+  const balance1=p1Paid-p1Share;
+  const balance2=p2Paid-p2Share;
+
+  if(Math.abs(balance1)<0.005){
+    el.innerHTML =
+      '<div class="kpi accent"><small>⚖️ Vyrovnanie</small><b>Ste vyrovnaní</b></div>';
+    return;
+  }
+
+  if(balance1>0){
+    el.innerHTML =
+      `<div class="kpi accent"><small>⚖️ Vyrovnanie</small><b>${esc(p2)} má doplatiť ${money(balance1)}</b></div>`;
+  }else{
+    el.innerHTML =
+      `<div class="kpi accent"><small>⚖️ Vyrovnanie</small><b>${esc(p1)} má doplatiť ${money(Math.abs(balance1))}</b></div>`;
+  }
+}
+
+function renderCategories(){
+  const el=document.getElementById("categorySummary");
+  if(!el) return;
+
+  const totals={};
+
+  expenses.forEach(e=>{
+    const name=e.category||"Ostatné";
+    totals[name]=(totals[name]||0)+Number(e.amount||0);
+  });
+
+  const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+
+  if(!rows.length){
+    el.innerHTML='<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+    return;
+  }
+
+  const total=rows.reduce((s,x)=>s+x[1],0);
+
+  el.innerHTML=rows.map(([name,value])=>{
+    const pct=total>0 ? value/total*100 : 0;
+
+    return `
+      <div class="category-row">
+        <div class="category-row-head">
+          <span>${categoryEmoji(name)} ${esc(name)}</span>
+          <b>${money(value)} · ${pct.toFixed(0)} %</b>
+        </div>
+        <div class="category-track">
+          <i style="width:${pct}%"></i>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function copyShare(){
+  navigator.clipboard
+    .writeText(location.href)
+    .then(()=>alert("Odkaz bol skopírovaný."))
+    .catch(()=>alert(location.href));
+}
+
 function openExpense(id){
 editing=id?expenses.find(e=>e.id===id):null;
 cat=editing?.category||"Jedlo";
@@ -134,28 +489,18 @@ function closeModal(){document.getElementById("modal").classList.remove("open")}
 function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 init()
 </script>
+
+
 <script>
 (function(){
-  const manifest = {
-    name: "Dovolenka Tracker",
-    short_name: "Dovolenka",
-    start_url: ".",
-    display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#ffffff",
-    icons: [{
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23ffffff'/%3E%3Ctext x='96' y='137' text-anchor='middle' font-size='116'%3E🏝️%3C/text%3E%3C/svg%3E",
-      sizes: "192x192",
-      type: "image/svg+xml",
-      purpose: "any maskable"
-    }]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("link");
-  link.rel = "manifest";
-  link.href = url;
-  document.head.appendChild(link);
+  const modal=document.getElementById("modal");
+  const settings=document.getElementById("settings");
+  function lock(){
+    document.documentElement.classList.toggle("modal-lock",
+      modal.classList.contains("open") || settings.classList.contains("open"));
+  }
+  new MutationObserver(lock).observe(modal,{attributes:true,attributeFilter:["class"]});
+  new MutationObserver(lock).observe(settings,{attributes:true,attributeFilter:["class"]});
 })();
 </script>
 
