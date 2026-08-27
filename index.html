@@ -407,15 +407,19 @@ function renderLists(){
 }
 
 function paidBy(person){
-  return expenses
-    .filter(e=>
-      (e.payer||"")===person &&
-      (e.settlement_status||"Nevyrovnané")!=="Vyrovnané"
-    )
-    .reduce((a,e)=>a+Number(e.amount||0),0);
-}
+  // Pri "Platené spolu" sa výdavok započíta každému iba z 50 %.
+  // Pri výdavku platenom jednou osobou sa započíta celá suma platiteľovi.
+  return expenses.reduce((total,e)=>{
+    const amount=Number(e.amount||0);
+    const status=e.settlement_status||"Nevyrovnané";
 
-function renderSettlement(){
+    if(status==="Platené spolu"){
+      return total + amount/2;
+    }
+
+    return total + ((e.payer||"")===person ? amount : 0);
+  },0);
+}function renderSettlement(){
   const el=document.getElementById("settle");
   if(!el) return;
 
