@@ -2,7 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dovolenka Tracker v9.5</title>
+<title>Dovolenka Tracker v9.6</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{margin:0;background:#f4f6f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a}.app{max-width:620px;margin:auto;padding:18px 14px 70px}
@@ -16,7 +16,16 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .category-field{margin-bottom:2px}.category-field>label{display:block;margin-bottom:6px}.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.cat{appearance:none;-webkit-appearance:none;background:#f7f8fa;border:1px solid #e5e9ef;padding:10px 3px;font-size:11px;min-height:58px;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}.cat span{display:block;font-size:20px}.cat.sel{background:#eef4ff;border-color:#c9d9ff}
 .share{display:flex;gap:8px;align-items:center;background:#f7f8fa;padding:10px;border-radius:12px}.share input{flex:1;border:0;background:transparent;font-size:12px}
 @media(max-width:420px){.cats{grid-template-columns:repeat(3,1fr)}}
-</style></head>
+</style>
+  <meta name="theme-color" content="#ffffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Dovolenka Tracker">
+  <meta name="application-name" content="Dovolenka Tracker">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffffff'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-size='42'%3E🏝️%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='38' fill='%23ffffff'/%3E%3Ctext x='90' y='128' text-anchor='middle' font-size='110'%3E🏝️%3C/text%3E%3C/svg%3E">
+
+</head>
 <body><div class="app" id="app"><div class="muted">Načítavam…</div></div>
 <div class="modal" id="modal"><div class="box"><h2 id="modalTitle">Pridať výdavok</h2><div class="form">
 <label>Suma (€)<input id="amount" type="number" min=".01" step=".01"></label>
@@ -124,4 +133,30 @@ async function saveSettings(){if(sstart.value&&send.value&&send.value<sstart.val
 function closeModal(){document.getElementById("modal").classList.remove("open")}function closeSettings(){document.getElementById("settings").classList.remove("open")}
 function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 init()
-</script></body></html>
+</script>
+<script>
+(function(){
+  const manifest = {
+    name: "Dovolenka Tracker",
+    short_name: "Dovolenka",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#ffffff",
+    icons: [{
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23ffffff'/%3E%3Ctext x='96' y='137' text-anchor='middle' font-size='116'%3E🏝️%3C/text%3E%3C/svg%3E",
+      sizes: "192x192",
+      type: "image/svg+xml",
+      purpose: "any maskable"
+    }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("link");
+  link.rel = "manifest";
+  link.href = url;
+  document.head.appendChild(link);
+})();
+</script>
+
+</body></html>
