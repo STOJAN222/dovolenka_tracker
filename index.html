@@ -87,6 +87,18 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .days{display:flex;min-height:56px;align-items:stretch}
 .day{display:block}
 
+
+.day{padding:9px 0;border-bottom:1px solid #e7ebf0}
+.day:last-child{border-bottom:0}
+.day-main{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.day-main small{color:#718096}
+.day-main b{font-size:15px}
+.day-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;font-size:11px;color:#718096}
+.day-meta span{white-space:nowrap}
+.day em{display:block;font-style:normal;font-size:10px;color:#9a6b00;margin-top:3px}
+.day.selected{background:#f4f7ff;margin:0 -7px;padding:9px 7px;border-radius:9px}
+.day.over .day-main b{color:#c2410c}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -310,6 +322,13 @@ function render(){
     </div>
 
     <div class="card">
+      <div class="top">
+        <b>POSLEDNÉ VÝDAVKY</b>
+        <span class="muted">${expenses.length}</span>
+      </div>
+      <div id="history"></div>
+    </div>
+    <div class="card">
       <div class="section-head">
         <b>VYSPORIADANIE</b>
         <span class="muted">kto reálne zaplatil</span>
@@ -326,7 +345,6 @@ function render(){
       </div>
       <div class="settlement-note">🤝 „Platené spolu“ sa započítava 50/50.</div><div id="settle" style="margin-top:12px"></div>
     </div>
-
     <div class="card">
       <div class="section-head">
         <b>📊 KATEGÓRIE</b>
@@ -334,41 +352,20 @@ function render(){
       </div>
       <div id="categorySummary"></div>
     </div>
-
-    <div class="card">
-      <b>SPÔSOB PLATBY</b>
-      <div class="grid2" style="margin-top:10px">
-        <div class="tile">
-          <small>💳 Karta</small>
-          <b>${money(
-            expenses
-              .filter(e=>e.payment==="Karta")
-              .reduce((a,e)=>a+Number(e.amount||0),0)
-          )}</b>
-        </div>
-        <div class="tile">
-          <small>💶 Hotovosť</small>
-          <b>${money(
-            expenses
-              .filter(e=>e.payment==="Hotovosť")
-              .reduce((a,e)=>a+Number(e.amount||0),0)
-          )}</b>
-        </div>
-      </div>
-    </div>
-
     <div class="card">
       <b>📅 DNI DOVOLENKY</b>
       <div class="days" id="days" style="margin-top:10px"></div>
     </div>
 
-    <div class="card">
-      <div class="top">
-        <b>POSLEDNÉ VÝDAVKY</b>
-        <span class="muted">${expenses.length}</span>
-      </div>
-      <div id="history"></div>
-    </div>
+
+
+
+
+
+
+
+
+
 
     <div class="card">
       <b>ZDIEĽAŤ TRACKER</b>
@@ -460,33 +457,45 @@ function renderLists(){
       }
 
       if(!dl.length){
-        dl=[...new Set(
-          expenses
-            .map(e=>e.expense_date)
-            .filter(Boolean)
-        )].sort();
+        dl=[...new Set(expenses.map(e=>e.expense_date).filter(Boolean))].sort();
       }
 
-      const plan =
-        (typeof variableBudget==="undefined" || !trip.budget)
-          ? 0
-          : Math.max(0,Number(trip.budget||0) -
-              expenses.filter(e=>e.fixed).reduce((a,e)=>a+Number(e.amount||0),0))
-            / dl.length;
+      const totalBudget=Number(trip.budget||0);
+      const fixedTotal=expenses
+        .filter(e=>e.fixed)
+        .reduce((a,e)=>a+Number(e.amount||0),0);
 
-      daysEl.innerHTML = dl.length
+      const fixedPerDay=dl.length ? fixedTotal/dl.length : 0;
+      const variableBudget=Math.max(0,totalBudget-fixedTotal);
+      const variablePerDay=dl.length ? variableBudget/dl.length : 0;
+      const totalPerDay=dl.length ? totalBudget/dl.length : 0;
+
+      daysEl.innerHTML=dl.length
         ? dl.map((d,i)=>{
-            const v=expenses
+            const variableSpent=expenses
               .filter(e=>e.expense_date===d && !e.fixed)
               .reduce((a,e)=>a+Number(e.amount||0),0);
 
-            const dayClass=v>plan && plan>0 ? " over" : "";
+            const fixedOnDate=expenses
+              .filter(e=>e.expense_date===d && e.fixed)
+              .reduce((a,e)=>a+Number(e.amount||0),0);
+
+            const plannedTotal=fixedPerDay+variablePerDay;
+            const dayTotal=fixedPerDay+variableSpent;
+            const over=dayTotal>plannedTotal && plannedTotal>0;
 
             return `
-              <div class="day ${d===today()?"selected":""}${dayClass}">
-                <small>${i+1}. deň · ${d.slice(5).replace("-",".")}</small>
-                <b>${money(v)}</b>
-                ${plan>0 ? `<em>plán ${money(plan)}</em>` : ""}
+              <div class="day ${d===today()?"selected":""}${over?" over":""}">
+                <div class="day-main">
+                  <small>${i+1}. deň · ${d.slice(8,10)}.${d.slice(5,7)}.</small>
+                  <b>${money(dayTotal)}</b>
+                </div>
+                <div class="day-meta">
+                  <span>Fixné ${money(fixedPerDay)}</span>
+                  <span>Bežné ${money(variableSpent)}</span>
+                  <span>plán ${money(plannedTotal)}</span>
+                </div>
+                ${fixedOnDate>0 ? `<em>Fixné reálne zaplatené ${money(fixedOnDate)}</em>` : ""}
               </div>
             `;
           }).join("")
@@ -496,7 +505,9 @@ function renderLists(){
       daysEl.innerHTML="<span class='muted'>Nepodarilo sa načítať dni dovolenky.</span>";
     }
   }
+
 }
+
 function paidBy(person){
   // Pri "Platené spolu" sa výdavok započíta každému iba z 50 %.
   // Pri výdavku platenom jednou osobou sa započíta celá suma platiteľovi.
