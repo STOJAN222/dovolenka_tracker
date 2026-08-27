@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dovolenka Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{margin:0;background:#f4f6f8;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#17202a}.app{max-width:620px;margin:auto;padding:18px 14px 70px}
+.card{background:#fff;border:1px solid #e5e9ef;border-radius:18px;padding:16px;margin:12px 0}.top{display:flex;justify-content:space-between;gap:10px;align-items:start}.muted{color:#718096;font-size:13px}
+h1{margin:0;font-size:25px}.hero{border-radius:22px;padding:20px;background:#fff}.total{font-size:38px;font-weight:850}.bar{height:10px;background:#edf0f4;border-radius:99px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;background:#2563eb}.daily{background:#eef4ff;border-radius:15px;padding:13px;margin-top:13px}.daily b{font-size:22px}
+button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14px;cursor:pointer}.primary{background:#2563eb;color:#fff}.ghost{background:#fff;border:1px solid #dce2e9}.add{width:100%;margin:12px 0;font-size:16px;padding:15px}
+.exp{display:flex;gap:9px;align-items:center;border-top:1px solid #eef0f2;padding:11px 0}.ico{font-size:22px;width:32px}.info{flex:1;min-width:0}.info b,.info small{display:block}.info small{color:#718096;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.amt{font-weight:800;white-space:nowrap}.acts{display:flex;gap:4px}.mini{padding:6px 7px;font-size:12px}
+.days{display:flex;gap:7px;overflow:auto}.day{min-width:58px;text-align:center;padding:9px 4px;background:#f7f8fa;border:1px solid #e5e9ef;border-radius:12px}.day b{display:block}.day small{color:#718096}.selected{background:#eef4ff;border-color:#c9d9ff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.tile{background:#eef4ff;border-radius:14px;padding:12px}.tile small{display:block;color:#718096}.tile b{font-size:19px}
+.modal{position:fixed;inset:0;background:#0008;display:none;align-items:end;justify-content:center;z-index:5}.modal.open{display:flex}.box{background:white;width:min(620px,100%);border-radius:22px 22px 0 0;padding:20px;max-height:92vh;overflow:auto}.form{display:grid;gap:11px}.form input,.form select{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d9dee6;border-radius:11px;font:inherit}.form label{font-size:13px;font-weight:750}.actions2{display:flex;gap:8px;justify-content:flex-end}
+.cats{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.cat{background:#f7f8fa;border:1px solid #e5e9ef;padding:8px 3px;font-size:11px}.cat span{display:block;font-size:20px}.cat.sel{background:#eef4ff;border-color:#c9d9ff}
+.share{display:flex;gap:8px;align-items:center;background:#f7f8fa;padding:10px;border-radius:12px}.share input{flex:1;border:0;background:transparent;font-size:12px}
+@media(max-width:420px){.cats{grid-template-columns:repeat(3,1fr)}}
+</style></head>
+<body><div class="app" id="app"><div class="muted">Načítavam…</div></div>
+<div class="modal" id="modal"><div class="box"><h2 id="modalTitle">Pridať výdavok</h2><div class="form">
+<label>Suma (€)<input id="amount" type="number" min=".01" step=".01"></label>
+<label>Kategória<div class="cats" id="cats"></div></label>
+<label>Dátum<input id="date" type="date"></label>
+<label>Kto platil?<select id="payer"></select></label>
+<label>Spôsob platby<select id="payment"><option>Karta</option><option>Hotovosť</option></select></label>
+<label>Vyrovnanie<select id="settlement"><option>Nevyrovnané</option><option>Vyrovnané</option><option>Platené spolu</option></select></label>
+<label>Poznámka<input id="note" placeholder="napr. večera"></label>
+<label><input id="fixed" type="checkbox"> 🔒 Fixný výdavok</label>
+<div class="actions2"><button class="ghost" onclick="closeModal()">Zrušiť</button><button class="primary" onclick="saveExpense()">Uložiť</button></div>
+</div></div></div>
+<div class="modal" id="settings"><div class="box"><h2>Nastavenie dovolenky</h2><div class="form">
+<label>Názov<input id="sname"></label><label>Rozpočet (€)<input id="sbudget" type="number" step=".01"></label>
+<label>Osoba 1<input id="sp1"></label><label>Osoba 2<input id="sp2"></label>
+<label>Začiatok<input id="sstart" type="date"></label><label>Koniec<input id="send" type="date"></label>
+<div class="actions2"><button class="ghost" onclick="closeSettings()">Zrušiť</button><button class="primary" onclick="saveSettings()">Uložiť</button></div>
+</div></div></div>
+<script>
+const SUPABASE_URL="https://jyirzhycpdwsxgzfzues.supabase.co",SUPABASE_KEY="sb_publishable_Wwps6w2vA2CynxVLucrWKw_p9uYxrjx";const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const cats=[["🍝","Jedlo"],["🍹","Drink"],["🏨","Ubytovanie"],["🚗","Doprava"],["🎟️","Aktivity"],["🛒","Nákupy"],["⛽","Palivo"],["🅿️","Parkovanie"],["✈️","Letenky"],["📦","Ostatné"]];
+let trip=null,expenses=[],editing=null,cat="Jedlo";
+const money=n=>new Intl.NumberFormat("sk-SK",{style:"currency",currency:"EUR"}).format(Number(n)||0);
+const today=()=>new Date().toISOString().slice(0,10);
+const days=(a,b)=>a&&b?Math.floor((new Date(b)-new Date(a))/86400000)+1:0;
+function code(){return crypto.randomUUID().replaceAll("-","").slice(0,10).toUpperCase()}
+function params(){return new URLSearchParams(location.search).get("trip")}
+async function init(){let c=params();if(!c)return landing();let {data,error}=await db.from("trips").select("*").eq("share_code",c).single();if(error||!data){return landing("Tracker sa nenašiel.")}trip=data;await load();render()}
+async function landing(msg){document.getElementById("app").innerHTML=`<div class="card"><h1>🏖️ Dovolenka Tracker</h1><p class="muted">${msg||"Vytvor si zdieľaný tracker pre dovolenku."}</p><button class="primary" onclick="createTrip()">＋ Vytvoriť dovolenku</button></div>`}
+async function createTrip(){let n=prompt("Názov dovolenky","Moja dovolenka")||"Moja dovolenka";let {data,error}=await db.from("trips").insert({name:n,share_code:code(),budget:0,person1:"Ja",person2:"Partner"}).select().single();if(error)return alert(error.message);trip=data;history.replaceState({}, "", "?trip="+trip.share_code);await load();render()}
+async function load(){let r=await db.from("expenses").select("*").eq("trip_id",trip.id).order("created_at",{ascending:false});expenses=r.data||[]}
+function dateList(){let n=days(trip.start_date,trip.end_date);if(!n)return [...new Set(expenses.map(e=>e.expense_date))].sort();return Array.from({length:n},(_,i)=>{let d=new Date(trip.start_date+"T00:00:00");d.setDate(d.getDate()+i);return d.toISOString().slice(0,10)})}
+function render(){let total=expenses.reduce((a,e)=>a+Number(e.amount),0),fixed=expenses.filter(e=>e.fixed).reduce((a,e)=>a+Number(e.amount),0),remain=Number(trip.budget)-total,n=days(trip.start_date,trip.end_date),pool=Math.max(0,Number(trip.budget)-fixed),planned=n?pool/n:0,left=trip.end_date?Math.max(0,days(today()>trip.end_date?trip.end_date:today(),trip.end_date)):0,dyn=left?Math.max(0,remain)/left:0;
+document.getElementById("app").innerHTML=`<div class="top"><div><h1>🇮🇹 ${esc(trip.name)}</h1><div class="muted">${trip.start_date||"—"} – ${trip.end_date||"—"} · EUR</div></div><button class="ghost" onclick="openSettings()">⚙️</button></div>
+<div class="card hero"><div class="muted">Celkom minuté</div><div class="total">${money(total)}</div><div class="bar"><i style="width:${trip.budget?Math.min(100,total/trip.budget*100):0}%"></i></div><div class="grid2"><div><div class="muted">Zostáva</div><b>${money(remain)}</b></div><div><div class="muted">Fixné</div><b>${money(fixed)}</b></div></div><div class="daily">💶 <b>${n?money(dyn)+" / deň":"—"}</b><div class="muted">${n?"Aktuálne tempo · "+left+" dní zostáva":"Nastav dátumy"}</div></div></div>
+<button class="primary add" onclick="openExpense()">＋ PRIDAŤ VÝDAVOK</button>
+<div class="card"><div class="top"><b>DNES</b><b>${money(expenses.filter(e=>e.expense_date===today()).reduce((a,e)=>a+Number(e.amount),0))}</b></div><div id="today"></div></div>
+<div class="card"><b>KTO PLATIL</b><div class="grid2" style="margin-top:10px"><div class="tile"><small>👤 ${esc(trip.person1)}</small><b>${money(unsettled(trip.person1))}</b></div><div class="tile"><small>👤 ${esc(trip.person2)}</small><b>${money(unsettled(trip.person2))}</b></div></div><div id="settle" style="text-align:center;margin-top:12px"></div></div>
+<div class="card"><b>SPÔSOB PLATBY</b><div class="grid2" style="margin-top:10px"><div class="tile"><small>💳 Karta</small><b>${money(expenses.filter(e=>e.payment==="Karta").reduce((a,e)=>a+Number(e.amount),0))}</b></div><div class="tile"><small>💶 Hotovosť</small><b>${money(expenses.filter(e=>e.payment==="Hotovosť").reduce((a,e)=>a+Number(e.amount),0))}</b></div></div></div>
+<div class="card"><b>DNI DOVOLENKY</b><div class="days" id="days" style="margin-top:10px"></div></div>
+<div class="card"><div class="top"><b>POSLEDNÉ VÝDAVKY</b><span class="muted">${expenses.length}</span></div><div id="history"></div></div>
+<div class="card"><b>ZDIEĽAŤ TRACKER</b><div class="share" style="margin-top:10px"><input id="shareUrl" readonly value="${esc(location.href)}"><button class="ghost" onclick="navigator.clipboard.writeText(location.href);this.textContent='Skopírované ✓'">Kopírovať</button></div></div>`;
+renderLists(planned)}
+function renderLists(planned){document.getElementById("today").innerHTML=expenses.filter(e=>e.expense_date===today()).map(row).join("")||'<div class="muted" style="padding-top:12px">Dnes zatiaľ žiadny výdavok.</div>';document.getElementById("history").innerHTML=expenses.slice(0,15).map(row).join("")||'<div class="muted" style="padding-top:12px">Zatiaľ žiadne výdavky.</div>';
+let dl=dateList();document.getElementById("days").innerHTML=dl.length?dl.map((d,i)=>{let v=expenses.filter(e=>e.expense_date===d&&!e.fixed).reduce((a,e)=>a+Number(e.amount),0);return `<div class="day"><small>${i+1}. deň</small><b>${money(v)}</b></div>`}).join(""):"<span class='muted'>Nastav dátumy.</span>";
+let u1=unsettled(trip.person1),u2=unsettled(trip.person2),diff=u1-u2;document.getElementById("settle").innerHTML=Math.abs(diff)<.005?"Ste vyrovnaní.":diff>0?`${esc(trip.person2)} ti má doplatiť <b>${money(diff/2)}</b>.`:`Ty máš ${esc(trip.person2)} doplatiť <b>${money(-diff/2)}</b>.`}
+function unsettled(p){return expenses.filter(e=>(e.settlement_status||"Nevyrovnané")==="Nevyrovnané"&&(e.payer||trip.person1)===p).reduce((a,e)=>a+Number(e.amount),0)}
+function row(e){let c=cats.find(x=>x[1]===e.category)||["•",e.category];return `<div class="exp"><div class="ico">${c[0]}</div><div class="info"><b>${esc(e.category)} · ${money(e.amount)}</b><small>${esc(e.note||"Bez poznámky")} · 👤 ${esc(e.payer)} · ${e.payment==="Hotovosť"?"💶":"💳"} · ${e.settlement_status==="Platené spolu"?"🤝":e.settlement_status==="Vyrovnané"?"🟢":"🔴"}</small></div><div class="acts"><button class="ghost mini" onclick="openExpense('${e.id}')">✏️</button><button class="ghost mini" onclick="delExpense('${e.id}')">🗑️</button></div></div>`}
+function openExpense(id){editing=id?expenses.find(e=>e.id===id):null;document.getElementById("modalTitle").textContent=editing?"Upraviť výdavok":"Pridať výdavok";document.getElementById("amount").value=editing?.amount||"";document.getElementById("date").value=editing?.expense_date||today();document.getElementById("note").value=editing?.note||"";document.getElementById("fixed").checked=!!editing?.fixed;document.getElementById("payment").value=editing?.payment||"Karta";document.getElementById("settlement").value=editing?.settlement_status||"Nevyrovnané";renderCats();document.getElementById("payer").innerHTML=`<option>${esc(trip.person1)}</option><option>${esc(trip.person2)}</option>`;document.getElementById("payer").value=editing?.payer||trip.person1;document.getElementById("modal").classList.add("open")}
+function renderCats(){document.getElementById("cats").innerHTML=cats.map(x=>`<button type="button" class="cat ${cat===x[1]?"sel":""}" onclick="cat='${x[1]}';renderCats()"><span>${x[0]}</span>${x[1]}</button>`).join("")}
+async function saveExpense(){let amount=Number(document.getElementById("amount").value);if(!amount)return alert("Zadaj sumu.");let obj={trip_id:trip.id,amount,category:cat,expense_date:document.getElementById("date").value,note:document.getElementById("note").value.trim(),fixed:document.getElementById("fixed").checked,payer:document.getElementById("payer").value,payment:document.getElementById("payment").value,settlement_status:document.getElementById("settlement").value};let r=editing?await db.from("expenses").update(obj).eq("id",editing.id):await db.from("expenses").insert(obj);if(r.error)return alert(r.error.message);closeModal();await load();render()}
+async function delExpense(id){if(!confirm("Vymazať výdavok?"))return;let r=await db.from("expenses").delete().eq("id",id);if(r.error)return alert(r.error.message);await load();render()}
+function openSettings(){sname.value=trip.name;sbudget.value=trip.budget;sp1.value=trip.person1;sp2.value=trip.person2;sstart.value=trip.start_date||"";send.value=trip.end_date||"";document.getElementById("settings").classList.add("open")}
+async function saveSettings(){if(sstart.value&&send.value&&send.value<sstart.value)return alert("Koniec nemôže byť pred začiatkom.");let r=await db.from("trips").update({name:sname.value||"Moja dovolenka",budget:Number(sbudget.value)||0,person1:sp1.value||"Ja",person2:sp2.value||"Partner",start_date:sstart.value||null,end_date:send.value||null}).eq("id",trip.id);if(r.error)return alert(r.error.message);closeSettings();let q=await db.from("trips").select("*").eq("id",trip.id).single();trip=q.data;await load();render()}
+function closeModal(){document.getElementById("modal").classList.remove("open")}function closeSettings(){document.getElementById("settings").classList.remove("open")}
+function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+init()
+</script></body></html>
