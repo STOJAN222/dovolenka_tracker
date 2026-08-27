@@ -50,6 +50,22 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .trip-status b{font-size:14px}
 @media(max-width:420px){.kpi-grid{grid-template-columns:1fr 1fr}.kpi b{font-size:18px}.today-foot{font-size:11px}.today-foot strong{font-size:12px}}
 
+
+
+.budget-breakdown{display:grid;gap:7px;margin-top:14px}
+.budget-breakdown>div{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.budget-breakdown span{color:#718096}
+.budget-breakdown b{font-weight:750}
+.budget-breakdown .budget-variable{padding:9px 10px;background:#f7f8fa;border-radius:10px}
+.budget-breakdown .budget-variable span{color:#17202a;font-weight:650}
+.today-dashboard.over{background:#fff1f2}
+.today-dashboard.warning{background:#fff8e8}
+.today-bar{margin:10px 0 8px;height:8px}
+.settlement-note{font-size:11px;color:#718096;margin-top:9px}
+.day{position:relative}
+.day em{display:block;font-size:9px;font-style:normal;color:#98a2b3;margin-top:2px}
+.day.over{border-color:#fecaca}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -186,11 +202,27 @@ function render(){
       ? variableBudget / tripDays
       : 0;
 
+  const variableRemaining =
+    Math.max(0,variableBudget-variableSpent);
+
+  const remainingDays =
+    activeToday
+      ? Math.max(1,daysLeft)
+      : today() < trip.start_date
+        ? Math.max(1,tripDays)
+        : 0;
+
+  // Dynamic allowance: what can still be spent per remaining vacation day.
+  const adaptiveDailyBudget =
+    remainingDays > 0
+      ? variableRemaining / remainingDays
+      : 0;
+
   // What is still available today after today's variable spending.
   const todayRemaining =
     activeToday
-      ? Math.max(0,dailyBudget-todayVariableSpent)
-      : dailyBudget;
+      ? Math.max(0,adaptiveDailyBudget-todayVariableSpent)
+      : adaptiveDailyBudget;
 
   const totalPercent =
     budget > 0
@@ -216,34 +248,30 @@ function render(){
         <i style="width:${totalPercent}%"></i>
       </div>
 
-      <div class="grid2">
-        <div>
-          <div class="muted">Zostáva z rozpočtu</div>
-          <b>${money(remaining)}</b>
-        </div>
-        <div>
-          <div class="muted">Fixné výdavky</div>
-          <b>${money(fixed)}</b>
-        </div>
+      <div class="budget-breakdown">
+        <div><span>Rozpočet</span><b>${money(budget)}</b></div>
+        <div><span>Fixné</span><b>− ${money(fixed)}</b></div>
+        <div class="budget-variable"><span>Na bežné výdavky</span><b>${money(variableBudget)}</b></div>
+        <div><span>Zostáva celkom</span><b>${money(remaining)}</b></div>
       </div>
 
-      <div class="today-dashboard">
+      <div class="today-dashboard ${activeToday && todayVariableSpent>adaptiveDailyBudget ? "over" : activeToday && todayVariableSpent>adaptiveDailyBudget*0.8 ? "warning" : ""}">
         <div class="today-head">
           <div>
-            <small>🎯 DNES</small>
-            <b>${money(todaySpent)}</b>
+            <small>🎯 DNES MINUTÉ</small>
+            <b>${money(todayVariableSpent)}</b>
           </div>
           <div class="today-right">
-            <small>Limit</small>
-            <b>${money(dailyBudget)}</b>
+            <small>Dnes môžeš minúť</small>
+            <b>${money(adaptiveDailyBudget)}</b>
           </div>
         </div>
         <div class="bar today-bar">
-          <i style="width:${dailyBudget>0?Math.min(100,todayVariableSpent/dailyBudget*100):0}%"></i>
+          <i style="width:${adaptiveDailyBudget>0?Math.min(100,todayVariableSpent/adaptiveDailyBudget*100):0}%"></i>
         </div>
         <div class="today-foot">
-          <span>Variabilné výdavky dnes</span>
-          <strong>${activeToday ? "Zostáva "+money(todayRemaining) : money(dailyBudget)+" / deň"}</strong>
+          <span>${activeToday ? (todayVariableSpent>adaptiveDailyBudget ? "⚠️ Nad dnešným plánom" : "🟢 V rámci dnešného plánu") : "Denný plán"}</span>
+          <strong>${activeToday ? "Zostáva "+money(todayRemaining) : money(adaptiveDailyBudget)+" / deň"}</strong>
         </div>
       </div>
 
@@ -279,7 +307,7 @@ function render(){
     <div class="card">
       <div class="section-head">
         <b>VYSPORIADANIE</b>
-        <span class="muted">${esc(trip.person1)} + ${esc(trip.person2)}</span>
+        <span class="muted">kto reálne zaplatil</span>
       </div>
       <div class="kpi-grid">
         <div class="kpi">
@@ -291,7 +319,7 @@ function render(){
           <b>${money(paidBy(trip.person2))}</b>
         </div>
       </div>
-      <div id="settle" style="margin-top:12px"></div>
+      <div class="settlement-note">🤝 „Platené spolu“ sa započítava 50/50.</div><div id="settle" style="margin-top:12px"></div>
     </div>
 
     <div class="card">
@@ -396,10 +424,19 @@ function renderLists(){
               .filter(e=>e.expense_date===d && !e.fixed)
               .reduce((a,e)=>a+Number(e.amount||0),0);
 
+          const dayPlan =
+            tripDays > 0
+              ? variableBudget / tripDays
+              : 0;
+
+          const dayClass =
+            v > dayPlan && dayPlan > 0 ? " over" : "";
+
           return `
-            <div class="day ${d===today()?"selected":""}">
-              <small>${i+1}. deň</small>
+            <div class="day ${d===today()?"selected":""}${dayClass}">
+              <small>${i+1}. deň · ${d.slice(5).replace("-",".")}</small>
               <b>${money(v)}</b>
+              <em>${dayPlan>0 ? "plán "+money(dayPlan) : ""}</em>
             </div>
           `;
         }).join("")
