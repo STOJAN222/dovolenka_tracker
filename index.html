@@ -66,6 +66,19 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 .day em{display:block;font-size:9px;font-style:normal;color:#98a2b3;margin-top:2px}
 .day.over{border-color:#fecaca}
 
+
+
+.compact-kpis{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:13px}
+.compact-kpis>div{background:#f7f8fa;border-radius:12px;padding:10px 11px}
+.compact-kpis small{display:block;color:#718096;font-size:11px}
+.compact-kpis b{display:block;font-size:18px;margin-top:3px}
+.today-mini{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px;padding:9px 11px;background:#eef4ff;border-radius:11px;font-size:12px;color:#526174}
+.today-mini b{font-size:14px;color:#1d4ed8}
+.today-mini.over{background:#fff1f2}.today-mini.warning{background:#fff8e8}
+.compact-status{margin-top:7px;padding-top:3px}
+.cat{position:relative;z-index:1;pointer-events:auto;cursor:pointer}
+@media(max-width:420px){.hero{padding:15px}.compact-kpis b{font-size:17px}.today-mini{font-size:11px}}
+
 </style>
   <meta name="theme-color" content="#ffffff">
   <meta name="mobile-web-app-capable" content="yes">
@@ -248,34 +261,23 @@ function render(){
         <i style="width:${totalPercent}%"></i>
       </div>
 
-      <div class="budget-breakdown">
-        <div><span>Rozpočet</span><b>${money(budget)}</b></div>
-        <div><span>Fixné</span><b>− ${money(fixed)}</b></div>
-        <div class="budget-variable"><span>Na bežné výdavky</span><b>${money(variableBudget)}</b></div>
-        <div><span>Zostáva celkom</span><b>${money(remaining)}</b></div>
-      </div>
-
-      <div class="today-dashboard ${activeToday && todayVariableSpent>adaptiveDailyBudget ? "over" : activeToday && todayVariableSpent>adaptiveDailyBudget*0.8 ? "warning" : ""}">
-        <div class="today-head">
-          <div>
-            <small>🎯 DNES MINUTÉ</small>
-            <b>${money(todayVariableSpent)}</b>
-          </div>
-          <div class="today-right">
-            <small>Dnes môžeš minúť</small>
-            <b>${money(adaptiveDailyBudget)}</b>
-          </div>
+      <div class="compact-kpis">
+        <div>
+          <small>Zostáva z rozpočtu</small>
+          <b>${money(remaining)}</b>
         </div>
-        <div class="bar today-bar">
-          <i style="width:${adaptiveDailyBudget>0?Math.min(100,todayVariableSpent/adaptiveDailyBudget*100):0}%"></i>
-        </div>
-        <div class="today-foot">
-          <span>${activeToday ? (todayVariableSpent>adaptiveDailyBudget ? "⚠️ Nad dnešným plánom" : "🟢 V rámci dnešného plánu") : "Denný plán"}</span>
-          <strong>${activeToday ? "Zostáva "+money(todayRemaining) : money(adaptiveDailyBudget)+" / deň"}</strong>
+        <div>
+          <small>Dnes môžeš minúť</small>
+          <b>${money(adaptiveDailyBudget)}</b>
         </div>
       </div>
 
-      <div class="trip-status">
+      <div class="today-mini ${activeToday && todayVariableSpent>adaptiveDailyBudget ? "over" : activeToday && todayVariableSpent>adaptiveDailyBudget*0.8 ? "warning" : ""}">
+        <span>🎯 Dnes minuté <b>${money(todayVariableSpent)}</b></span>
+        <span>${activeToday ? "Zostáva "+money(todayRemaining) : money(adaptiveDailyBudget)+" / deň"}</span>
+      </div>
+
+      <div class="trip-status compact-status">
         <span>💡</span>
         <div>
           <b>
@@ -283,11 +285,6 @@ function render(){
               ? "Zostáva "+daysLeft+" "+(daysLeft===1?"deň":"dní")
               : today() < trip.start_date ? `Dovolenka začína ${new Date(trip.start_date+"T00:00:00").toLocaleDateString("sk-SK")}` : `Dovolenka skončila ${new Date(trip.end_date+"T00:00:00").toLocaleDateString("sk-SK")}`}
           </b>
-          <div class="muted">
-            ${activeToday
-              ? "Denný limit je vypočítaný po odpočítaní fixných výdavkov."
-              : "Denný limit je pripravený na každý deň dovolenky."}
-          </div>
         </div>
       </div>
     </div>
@@ -571,26 +568,9 @@ document.getElementById("payer").value=editing?.payer||trip.person1;
 renderCats();
 document.getElementById("modal").classList.add("open")
 }
-function selectCategory(index, event){
-  if(event){
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  const item = cats[Number(index)];
-  if(!item) return;
-
-  cat = item[1];
-
-  document.querySelectorAll("#cats .cat").forEach(function(btn){
-    const selected = Number(btn.dataset.catIndex) === Number(index);
-    btn.classList.toggle("sel", selected);
-    btn.setAttribute("aria-pressed", selected ? "true" : "false");
-  });
-}
-
 function renderCats(){
   const el = document.getElementById("cats");
+  if(!el) return;
 
   el.innerHTML = cats.map(function(x,i){
     return `
@@ -599,7 +579,6 @@ function renderCats(){
         class="cat ${cat === x[1] ? "sel" : ""}"
         data-cat-index="${i}"
         aria-pressed="${cat === x[1] ? "true" : "false"}"
-        onclick="selectCategory(${i}, event)"
       >
         <span>${x[0]}</span>
         ${x[1]}
@@ -607,6 +586,25 @@ function renderCats(){
     `;
   }).join("");
 }
+
+document.addEventListener("click",function(e){
+  const btn=e.target.closest("#cats .cat");
+  if(!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const index=Number(btn.dataset.catIndex);
+  if(!Number.isInteger(index) || !cats[index]) return;
+
+  cat=cats[index][1];
+
+  document.querySelectorAll("#cats .cat").forEach(function(b){
+    const selected=Number(b.dataset.catIndex)===index;
+    b.classList.toggle("sel",selected);
+    b.setAttribute("aria-pressed",selected?"true":"false");
+  });
+});
 
 async function saveExpense(){let amount=Number(document.getElementById("amount").value);if(!amount)return alert("Zadaj sumu.");let obj={p_share_code:trip.share_code,p_amount:amount,p_category:cat,p_expense_date:document.getElementById("date").value,p_note:document.getElementById("note").value.trim(),p_fixed:document.getElementById("fixed").checked,p_payer:document.getElementById("payer").value,p_payment:document.getElementById("payment").value,p_settlement_status:document.getElementById("settlement").value};let r=editing?await db.rpc("update_expense",{...obj,p_expense_id:editing.id}):await db.rpc("add_expense",obj);if(r.error)return alert(r.error.message);closeModal();await load();render()}
 async function delExpense(id){if(!confirm("Vymazať výdavok?"))return;let r=await db.rpc("delete_expense",{p_share_code:trip.share_code,p_expense_id:id});if(r.error)return alert(r.error.message);await load();render()}
