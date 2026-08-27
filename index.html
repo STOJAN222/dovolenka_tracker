@@ -55,14 +55,18 @@ button{font:inherit;font-weight:750;border:0;border-radius:12px;padding:11px 14p
 (function(){
   try{
     const params = new URLSearchParams(window.location.search);
-    const savedTrip = localStorage.getItem("dovolenka_trip");
+    let savedTrip = localStorage.getItem("dovolenka_trip");
+    if (!savedTrip) {
+      const match = document.cookie.match(/(?:^|; )dovolenka_trip=([^;]*)/);
+      savedTrip = match ? decodeURIComponent(match[1]) : "";
+    }
     if (!params.get("trip") && savedTrip) {
       const url = new URL(window.location.href);
       url.searchParams.set("trip", savedTrip);
       window.history.replaceState({}, "", url.toString());
     }
   } catch (e) {
-    // Never block application startup because localStorage is unavailable.
+    // Never block application startup.
   }
 })();
 </script>
@@ -95,21 +99,27 @@ const today=()=>new Date().toISOString().slice(0,10);
 const days=(a,b)=>a&&b?Math.floor((new Date(b)-new Date(a))/86400000)+1:0;
 function code(){return crypto.randomUUID().replaceAll("-","").slice(0,10).toUpperCase()}
 function params(){return new URLSearchParams(location.search).get("trip")}
+function savedTripCookie(){
+  const m=document.cookie.match(/(?:^|; )dovolenka_trip=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
 async function init(){
-  let c=params() || localStorage.getItem("dovolenka_trip");
+  let c=params() || localStorage.getItem("dovolenka_trip") || savedTripCookie();
   if(!c)return landing();
   let r=await db.rpc("get_trip",{p_share_code:c});
   if(r.error||!r.data){
     localStorage.removeItem("dovolenka_trip");
+    document.cookie="dovolenka_trip=; path=/; max-age=0; SameSite=Lax";
     return landing(r.error?.message||"Tracker sa nenašiel.");
   }
   localStorage.setItem("dovolenka_trip",c);
+  document.cookie="dovolenka_trip="+encodeURIComponent(c)+"; path=/; max-age=31536000; SameSite=Lax";
   trip=r.data.trip;
   expenses=r.data.expenses||[];
   render();
 }
 async function landing(msg){document.getElementById("app").innerHTML=`<div class="card"><h1>🏖️ Dovolenka Tracker</h1><p class="muted">${msg||"Vytvor si zdieľaný tracker pre dovolenku."}</p><button class="primary" onclick="createTrip()">＋ Vytvoriť dovolenku</button></div>`}
-async function createTrip(){let n=prompt("Názov dovolenky","Moja dovolenka")||"Moja dovolenka";let r=await db.rpc("create_trip",{p_name:n});if(r.error)return alert(r.error.message);trip=r.data;localStorage.setItem("dovolenka_trip",trip.share_code);history.replaceState({},"","?trip="+trip.share_code);await load();render()}
+async function createTrip(){let n=prompt("Názov dovolenky","Moja dovolenka")||"Moja dovolenka";let r=await db.rpc("create_trip",{p_name:n});if(r.error)return alert(r.error.message);trip=r.data;localStorage.setItem("dovolenka_trip",trip.share_code);document.cookie="dovolenka_trip="+encodeURIComponent(trip.share_code)+"; path=/; max-age=31536000; SameSite=Lax";history.replaceState({},"","?trip="+trip.share_code);await load();render()}
 async function load(){let r=await db.rpc("get_trip",{p_share_code:trip.share_code});if(r.error)throw new Error(r.error.message);trip=r.data.trip;expenses=r.data.expenses||[]}
 function dateList(){let n=days(trip.start_date,trip.end_date);if(!n)return [...new Set(expenses.map(e=>e.expense_date))].sort();return Array.from({length:n},(_,i)=>{let d=new Date(trip.start_date+"T00:00:00");d.setDate(d.getDate()+i);return d.toISOString().slice(0,10)})}
 function render(){
